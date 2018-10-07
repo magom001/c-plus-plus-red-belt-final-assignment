@@ -28,5 +28,5 @@ int main() {
     RUN_TEST(tr, TestRanking);
     RUN_TEST(tr, TestBasicSearch);
     RUN_TEST(tr, TestMidLoad);
-//    RUN_TEST(tr, TestHeavyLoad);
+    RUN_TEST(tr, TestHeavyLoad);
 }

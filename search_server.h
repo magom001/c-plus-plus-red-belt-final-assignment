@@ -1,67 +1,51 @@
 #pragma once
 
-#include "add_duration.h"
+#include "search_server.h"
 #include "synchronized.h"
 
 #include <istream>
 #include <ostream>
-#include <set>
-#include <list>
 #include <vector>
-#include <map>
 #include <string>
-#include <unordered_map>
+#include <string_view>
+#include <queue>
 #include <future>
-
+#include <map>
 using namespace std;
-
-vector<string_view> SplitIntoWords(string_view line);
 
 class InvertedIndex {
 public:
-    InvertedIndex() {
-        docs.reserve(50000);
-        index.reserve(10010);
-    }
+    struct Entry {
+        size_t docid, hitcount;
+    };
 
-    void Add(string document);
+    InvertedIndex() = default;
+    explicit InvertedIndex(istream& document_input);
 
-    const size_t GetIndexSize() const;
+    const vector<Entry>& Lookup(string_view word) const;
 
-    const vector<pair<unsigned short int, size_t>> &Lookup(string_view word) const;
-
-    const string &GetDocument(size_t id) const {
-        return docs[id];
-    }
-
-    size_t getDocsSize() {
-        return docs.size();
+    const deque<string>& GetDocuments() const {
+        return docs;
     }
 
 private:
-    vector<pair<unsigned short int, size_t>> empty_ = {};
-    unordered_map<string_view, vector<pair<unsigned short int, size_t>>> index;
-    vector<string> docs;
-    size_t doc_id = 0;
+    deque<string> docs;
+    map<string_view, vector<Entry>> index;
 };
 
 class SearchServer {
 public:
     SearchServer() = default;
+    explicit SearchServer(istream& document_input)
+            : index(InvertedIndex(document_input))
+    {
+    }
 
-    explicit SearchServer(istream &document_input);
-
-    void UpdateDocumentBase(istream &document_input);
-
-    void AddQueriesStream(istream &query_input, ostream &search_results_output);
-    void AddQueriesStreamSingleThread(istream& query_input, ostream &search_results_output);
+    void UpdateDocumentBase(istream& document_input);
+    void AddQueriesStream(istream& query_input, ostream& search_results_output);
 
 private:
-    TotalDuration reset{"reset"};
-    TotalDuration lookup{"Lookup"};
-    TotalDuration psort{"AddQueries partial_sort"};
-
     Synchronized<InvertedIndex> index;
-
-    vector<future<void>> search_query_fut;
+    vector<future<void>> async_tasks;
 };
+

@@ -48,7 +48,7 @@ void TestSearchServer(vector<pair<istream, ostream*>> streams) {
 }
 
 void TestSplitIntoWords() {
-    vector<string_view> words = SplitIntoWords("this   is a  string");
+    vector<string_view> words = SplitIntoWordsView("this   is a  string");
     vector<string_view> result = {{"this"}, {"is"}, {"a"}, {"string"}};
     ASSERT_EQUAL(words, result);
 }

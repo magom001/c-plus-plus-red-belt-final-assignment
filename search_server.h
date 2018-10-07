@@ -11,7 +11,7 @@
 #include <map>
 #include <string>
 #include <unordered_map>
-
+#include <future>
 
 using namespace std;
 
@@ -54,14 +54,14 @@ public:
     void UpdateDocumentBase(istream &document_input);
 
     void AddQueriesStream(istream &query_input, ostream &search_results_output);
+    void AddQueriesStreamSingleThread(istream& query_input, ostream &search_results_output);
 
 private:
     TotalDuration reset{"reset"};
     TotalDuration lookup{"Lookup"};
-//    TotalDuration split{"AddQueries SplitWords"};
     TotalDuration psort{"AddQueries partial_sort"};
-//    TotalDuration add{"InvertedIndex add"};
-//    TotalDuration update{"InvertedIndex update"};
 
     Synchronized<InvertedIndex> index;
+
+    vector<future<void>> search_query_fut;
 };

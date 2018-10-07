@@ -8,7 +8,6 @@
 #include <sstream>
 #include <iostream>
 #include <numeric>
-#include <future>
 
 vector<string_view> SplitIntoWords(string_view line) {
     vector<string_view> result;
@@ -47,9 +46,7 @@ void SearchServer::UpdateDocumentBase(istream &document_input) {
     index.GetAccess().ref_to_value = move(new_index_fut.get());
 }
 
-
-void SearchServer::AddQueriesStream(istream &query_input, ostream &search_results_output) {
-
+void SearchServer::AddQueriesStreamSingleThread(istream& query_input, ostream &search_results_output) {
     size_t docid_count_size = index.GetAccess().ref_to_value.getDocsSize();
     vector<pair<size_t, int>> lookup_results(docid_count_size);
 
@@ -87,11 +84,14 @@ void SearchServer::AddQueriesStream(istream &query_input, ostream &search_result
                                       << "hitcount: " << hitcount << '}';
             }
         }
-        //search_results_output << endl;
         search_results_output << '\n';
-
-
     }
+}
+
+void SearchServer::AddQueriesStream(istream &query_input, ostream &search_results_output) {
+    search_query_fut.push_back(async([&]{
+        this->AddQueriesStreamSingleThread(query_input, search_results_output);
+    }));
 }
 
 

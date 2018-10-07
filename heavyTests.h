@@ -19,7 +19,33 @@
 #include <fstream>
 #include <random>
 #include <thread>
+#include <chrono>
+
 using namespace std;
+
+chrono::milliseconds random_time() {
+    std::mt19937_64 eng{std::random_device{}()};
+    std::uniform_int_distribution<> dist{10, 100};
+
+    return chrono::milliseconds{dist(eng)};
+}
+
+void TestSearchServer(vector<pair<istream, ostream*>> streams) {
+    // IteratorRange — шаблон из задачи Paginator
+    // random_time() — функция, которая возвращает случайный
+    // промежуток времени
+
+    LOG_DURATION("Total");
+    SearchServer srv(streams.front().first);
+    for (auto& [input, output] : IteratorRange(begin(streams) + 1, end(streams))) {
+        this_thread::sleep_for(random_time());
+        if (!output) {
+            srv.UpdateDocumentBase(input);
+        } else {
+            srv.AddQueriesStream(input, *output);
+        }
+    }
+}
 
 void TestSplitIntoWords() {
     vector<string_view> words = SplitIntoWords("this   is a  string");

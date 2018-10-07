@@ -1,6 +1,7 @@
 #pragma once
 
 #include "add_duration.h"
+#include "synchronized.h"
 
 #include <istream>
 #include <ostream>
@@ -10,6 +11,7 @@
 #include <map>
 #include <string>
 #include <unordered_map>
+
 
 using namespace std;
 
@@ -61,5 +63,5 @@ private:
 //    TotalDuration add{"InvertedIndex add"};
 //    TotalDuration update{"InvertedIndex update"};
 
-    InvertedIndex index;
+    Synchronized<InvertedIndex> index;
 };

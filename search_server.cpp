@@ -8,7 +8,7 @@
 #include <sstream>
 #include <iostream>
 #include <numeric>
-
+#include <future>
 
 vector<string_view> SplitIntoWords(string_view line) {
     vector<string_view> result;
@@ -16,8 +16,8 @@ vector<string_view> SplitIntoWords(string_view line) {
     while (true) {
         size_t space = line.find(' ');
         auto w = line.substr(0, space);
-        if(w != "") {
-            result.push_back(w);
+        if (w != "") {
+            result.push_back(move(w));
         }
         if (space == line.npos) {
             break;
@@ -32,20 +32,25 @@ SearchServer::SearchServer(istream &document_input) {
     UpdateDocumentBase(document_input);
 }
 
-void SearchServer::UpdateDocumentBase(istream &document_input) {
+InvertedIndex BuildIndex(istream &document_input) {
     InvertedIndex new_index;
     string current_document;
     for (; getline(document_input, current_document);) {
         new_index.Add(move(current_document));
     }
+    return new_index;
+}
 
-    index = move(new_index);
+void SearchServer::UpdateDocumentBase(istream &document_input) {
+    future<InvertedIndex> new_index_fut = async(BuildIndex, ref(document_input));
+
+    index.GetAccess().ref_to_value = move(new_index_fut.get());
 }
 
 
 void SearchServer::AddQueriesStream(istream &query_input, ostream &search_results_output) {
 
-    size_t docid_count_size = index.getDocsSize();
+    size_t docid_count_size = index.GetAccess().ref_to_value.getDocsSize();
     vector<pair<size_t, int>> lookup_results(docid_count_size);
 
 
@@ -60,7 +65,7 @@ void SearchServer::AddQueriesStream(istream &query_input, ostream &search_result
         lookup_results = lookup_results_copy;
 
         for (string_view word : SplitIntoWords(current_query)) {
-            for (const pair<size_t, size_t> &docid : index.Lookup(word)) {
+            for (const pair<size_t, size_t> &docid : index.GetAccess().ref_to_value. Lookup(word)) {
 
                 lookup_results[docid.first].first += docid.second;
             }
